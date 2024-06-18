@@ -156,6 +156,22 @@ func (fs *ErrorFS) Open(name string, opts ...OpenOption) (File, error) {
 	return ef, nil
 }
 
+// OpenReadWrite implements FS.OpenReadWrite.
+func (fs *ErrorFS) OpenReadWrite(name string, opts ...OpenOption) (File, error) {
+	if err := fs.inj.MaybeError(OpRead); err != nil {
+		return nil, err
+	}
+	f, err := fs.fs.OpenReadWrite(name)
+	if err != nil {
+		return nil, err
+	}
+	ef := &errorFile{f, fs.inj}
+	for _, opt := range opts {
+		opt.Apply(ef)
+	}
+	return ef, nil
+}
+
 // OpenDir implements FS.OpenDir.
 func (fs *ErrorFS) OpenDir(name string) (File, error) {
 	if err := fs.inj.MaybeError(OpRead); err != nil {

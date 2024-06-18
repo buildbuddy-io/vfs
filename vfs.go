@@ -57,6 +57,10 @@ type FS interface {
 	// Open opens the named file for reading. openOptions provides
 	Open(name string, opts ...OpenOption) (File, error)
 
+	// OpenReadWrite opens the named file for reading and writing. If the file
+	// does not exist, it is created.
+	OpenReadWrite(name string, opts ...OpenOption) (File, error)
+
 	// OpenDir opens the named directory for syncing.
 	OpenDir(name string) (File, error)
 
@@ -185,6 +189,18 @@ func (defaultFS) Link(oldname, newname string) error {
 
 func (defaultFS) Open(name string, opts ...OpenOption) (File, error) {
 	file, err := os.OpenFile(name, os.O_RDONLY|syscall.O_CLOEXEC, 0)
+	f := &fileCompat{file}
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	for _, opt := range opts {
+		opt.Apply(f)
+	}
+	return f, nil
+}
+
+func (defaultFS) OpenReadWrite(name string, opts ...OpenOption) (File, error) {
+	file, err := os.OpenFile(name, os.O_RDWR|syscall.O_CLOEXEC|os.O_CREATE, 0666)
 	f := &fileCompat{file}
 	if err != nil {
 		return nil, errors.WithStack(err)
