@@ -1,4 +1,4 @@
-module github.com/lni/vfs
+module github.com/buildbuddy-io/vfs
 
 go 1.17
 
